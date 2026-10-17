@@ -19,6 +19,8 @@ import * as reviewRoute from "@/app/api/suggestions/review/route";
 import * as csvRoute from "@/app/api/import/csv/route";
 import * as resetRoute from "@/app/api/demo/reset/route";
 import * as ticketsRoute from "@/app/api/tickets/route";
+import * as submitGet from "@/app/api/assignments/submit/route";
+import * as adminUsers from "@/app/api/admin/users/route";
 import * as adminPassword from "@/app/api/admin/users/[id]/password/route";
 
 const PASSWORD = "Demo123!";
@@ -288,6 +290,29 @@ describe("Teachers can only write for classes/subjects they teach", () => {
     expect(await db.getStudentSubmission("asg-02", "usr-stu-01")).toBeNull();
     const temur = await loginAs("temur.bekmirzayev"); // wrong class
     expect((await call(submitRoute.POST, "POST", "/api/assignments/submit", { cookie: temur, body: { assignmentId: "asg-02", content: "x" } })).status).toBe(403);
+  });
+});
+
+describe("Submissions and user list are scoped", () => {
+  beforeAll(setupDb);
+
+  it("a student reads only their own submission; only the assignment's teacher reads all", async () => {
+    const own = await call(submitGet.GET, "GET", "/api/assignments/submit?assignmentId=asg-01", { cookie: await loginAs("azamat.toirov") });
+    expect((await own.json()).submissions.map((s: { studentId: string }) => s.studentId)).toEqual(["usr-stu-01"]);
+    const other = await call(submitGet.GET, "GET", "/api/assignments/submit?assignmentId=asg-01", { cookie: await loginAs("madina.zaripova") });
+    expect((await other.json()).submissions).toEqual([]);
+    const outsider = await call(submitGet.GET, "GET", "/api/assignments/submit?assignmentId=asg-01", { cookie: await loginAs("temur.bekmirzayev") });
+    expect(outsider.status).toBe(403);
+    expect((await call(submitGet.GET, "GET", "/api/assignments/submit?assignmentId=asg-01", { cookie: await loginAs("malika.usmanova") })).status).toBe(403);
+    const math = await call(submitGet.GET, "GET", "/api/assignments/submit?assignmentId=asg-01", { cookie: await loginAs("jasur.rahimov") });
+    expect(math.status).toBe(200);
+  });
+
+  it("only admins can list users, and password hashes are never returned", async () => {
+    expect((await call(adminUsers.GET, "GET", "/api/admin/users", { cookie: await loginAs("jasur.rahimov") })).status).toBe(403);
+    const res = await call(adminUsers.GET, "GET", "/api/admin/users", { cookie: await loginAs("director") });
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(await res.json())).not.toMatch(/passwordHash|\$2[aby]\$/);
   });
 });
 

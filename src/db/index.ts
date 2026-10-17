@@ -29,6 +29,10 @@ class DataRepository {
     return u ?? null;
   }
 
+  public async getAllUsers() {
+    return getDb().select().from(t.users).orderBy(t.users.role, t.users.fullName);
+  }
+
   public async getFirstUserByRole(role: string) {
     const [u] = await getDb()
       .select()

@@ -51,6 +51,12 @@ export const en = {
     username: "Username",
     password: "Password",
     signIn: "Sign in",
+    account: "Account",
+    currentPassword: "Current password",
+    newPassword: "New password (min 8)",
+    changePassword: "Change password",
+    passwordChanged: "Password changed",
+    resetPassword: "Reset password",
     signOut: "Sign out",
   },
   nav: {

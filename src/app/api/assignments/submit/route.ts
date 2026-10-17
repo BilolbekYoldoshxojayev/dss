@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { badRequest, forbidden, notFound, readJson, withAuth } from "@/lib/authz";
+import { assertTeachesAssignment, badRequest, forbidden, notFound, readJson, withAuth } from "@/lib/authz";
 import { db } from "@/db";
 
 export const POST = withAuth(
@@ -17,3 +17,21 @@ export const POST = withAuth(
   },
   { roles: ["student"] }
 );
+
+// Students get their own submission; the teacher of the assignment (or an admin) gets all of them.
+export const GET = withAuth(async (req, user) => {
+  const assignmentId = new URL(req.url).searchParams.get("assignmentId");
+  if (!assignmentId) throw badRequest("assignmentId is required");
+  const assignment = await db.getAssignmentById(assignmentId);
+  if (!assignment) throw notFound("Assignment not found");
+  if (user.role === "student") {
+    if (assignment.classId !== user.classId) throw forbidden();
+    const own = await db.getStudentSubmission(assignmentId, user.id);
+    return NextResponse.json({ submissions: own ? [own] : [] });
+  }
+  if (user.role === "teacher" || user.role === "admin") {
+    await assertTeachesAssignment(user, assignment.courseId);
+    return NextResponse.json({ submissions: await db.getSubmissionsForAssignment(assignmentId) });
+  }
+  throw forbidden();
+});

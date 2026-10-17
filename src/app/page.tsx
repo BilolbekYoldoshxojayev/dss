@@ -5,6 +5,8 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/i18n/context";
+import { AccountModule } from "@/components/modules/AccountModule";
+import { UsersModule } from "@/components/modules/UsersModule";
 import { LoginScreen } from "@/components/LoginScreen";
 
 // Modules
@@ -45,6 +47,12 @@ export default function Home() {
           return <AssignmentsModule />;
         }
         return <StudentDashboardModule onNavigate={(tab) => setActiveTab(tab)} />;
+
+      case "account":
+        return <AccountModule />;
+
+      case "users":
+        return role === "admin" ? <UsersModule /> : <StudentDashboardModule onNavigate={(tab) => setActiveTab(tab)} />;
 
       case "suggestions":
         return <AnonymousSuggestionsModule />;
@@ -112,6 +120,8 @@ export default function Home() {
               className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200"
             >
               <option value="dashboard">{t.nav.dashboard}</option>
+              <option value="account">{t.auth.account}</option>
+              {role === "admin" && <option value="users">{t.nav.userManagement}</option>}
               <option value="timetable">{t.nav.timetable}</option>
               <option value="assignments">{t.nav.assignments}</option>
               {hasTab("workload") && <option value="workload">{t.nav.workload}</option>}

@@ -67,6 +67,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         return [
           { id: "dashboard", label: "Administrator paneli", icon: LayoutDashboard },
           { id: "suggestions-review", label: "Anonim takliflar (Ko'rib chiqish)", icon: MessageSquareLock },
+          { id: "users", label: t.nav.userManagement, icon: UserCog },
           { id: "analytics", label: t.nav.analytics, icon: BarChart3 },
           { id: "csv-import", label: t.common.importCsv + " (Maktab ko'chirish)", icon: UploadCloud },
           { id: "timetable", label: "Dars jadvallarini boshqarish", icon: CalendarDays },
@@ -93,7 +94,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     }
   };
 
-  const navItems = getNavItems().filter((item) => hasTab(item.id));
+  const navItems = [...getNavItems(), { id: "account", label: t.auth.account, icon: UserCog }].filter((item) => hasTab(item.id));
 
   return (
     <aside className="w-64 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between hidden md:flex">
