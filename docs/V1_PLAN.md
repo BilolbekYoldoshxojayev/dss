@@ -23,7 +23,7 @@ The repo (`namps-os`, Next.js 15 + TypeScript + Tailwind + Drizzle) is a **click
 | Attendance | UI + API exist; no backdate window, no auth | `src/app/api/attendance/route.ts` |
 | Out-of-scope modules | Present: anonymous suggestions, guardian portal, clubs/events, projects, facilities, knowledge base, workload | `src/components/modules/` |
 | Repo hygiene | `tsconfig.tsbuildinfo` is committed despite `.gitignore` | `git ls-files` |
-| Build / tests | **Not yet verified.** Two vitest files run against the in-memory store. | `tests/` |
+| Build / tests | Green on 2026-10-17: typecheck, 13/13 vitest, `next build`. Tests only cover the in-memory store. | `tests/` |
 
 **What this means today:** anyone on the network can call `POST /api/assignments/grade`, read `GET /api/attendance?studentId=<anyone>`, run a CSV import, or call `/api/demo/reset`. The guide's most important test ("a student cannot see another student's marks") fails by design. Fixing this is Milestone 1.
 
