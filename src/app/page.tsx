@@ -1,0 +1,136 @@
+"use client";
+
+import React, { useState } from "react";
+import { Navbar } from "@/components/layout/Navbar";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/i18n/context";
+
+// Modules
+import { StudentDashboardModule } from "@/components/modules/StudentDashboardModule";
+import { DirectorDashboardModule } from "@/components/modules/DirectorDashboardModule";
+import { GuardianPortalModule } from "@/components/modules/GuardianPortalModule";
+import { AnonymousSuggestionsModule } from "@/components/modules/AnonymousSuggestionsModule";
+import { SuggestionsReviewModule } from "@/components/modules/SuggestionsReviewModule";
+import { TimetableModule } from "@/components/modules/TimetableModule";
+import { AssignmentsModule } from "@/components/modules/AssignmentsModule";
+import { WorkloadModule } from "@/components/modules/WorkloadModule";
+import { AttendanceModule } from "@/components/modules/AttendanceModule";
+import { CsvImportModule } from "@/components/modules/CsvImportModule";
+import { KnowledgeBaseModule } from "@/components/modules/KnowledgeBaseModule";
+import { AnnouncementsModule } from "@/components/modules/AnnouncementsModule";
+import { EventsClubsModule } from "@/components/modules/EventsClubsModule";
+import { ProjectsModule } from "@/components/modules/ProjectsModule";
+import { FacilitiesSupportModule } from "@/components/modules/FacilitiesSupportModule";
+
+export default function Home() {
+  const { role } = useAuth();
+  const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Determine what to render based on activeTab and role
+  const renderActiveModule = () => {
+    switch (activeTab) {
+      case "dashboard":
+        if (role === "director") {
+          return <DirectorDashboardModule onNavigateToSuggestions={() => setActiveTab("suggestions-review")} />;
+        }
+        if (role === "parent") {
+          return <GuardianPortalModule />;
+        }
+        if (role === "manager") {
+          return <CsvImportModule />;
+        }
+        if (role === "teacher") {
+          return <AssignmentsModule />;
+        }
+        return <StudentDashboardModule onNavigate={(tab) => setActiveTab(tab)} />;
+
+      case "suggestions":
+        return <AnonymousSuggestionsModule />;
+
+      case "suggestions-review":
+        return <SuggestionsReviewModule />;
+
+      case "timetable":
+        return <TimetableModule />;
+
+      case "assignments":
+        return <AssignmentsModule />;
+
+      case "workload":
+        return <WorkloadModule />;
+
+      case "attendance":
+        return <AttendanceModule />;
+
+      case "csv-import":
+        return <CsvImportModule />;
+
+      case "policies":
+        return <KnowledgeBaseModule />;
+
+      case "announcements":
+        return <AnnouncementsModule />;
+
+      case "events":
+        return <EventsClubsModule />;
+
+      case "projects":
+        return <ProjectsModule />;
+
+      case "facilities":
+        return <FacilitiesSupportModule />;
+
+      case "guardian":
+        return <GuardianPortalModule />;
+
+      case "analytics":
+        return <DirectorDashboardModule onNavigateToSuggestions={() => setActiveTab("suggestions-review")} />;
+
+      default:
+        return <StudentDashboardModule onNavigate={(tab) => setActiveTab(tab)} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
+      <Navbar />
+
+      <div className="flex-1 flex max-w-7xl w-full mx-auto">
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+          {/* Mobile Tab Quick Selector */}
+          <div className="md:hidden mb-4">
+            <select
+              value={activeTab}
+              onChange={(e) => setActiveTab(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200"
+            >
+              <option value="dashboard">{t.nav.dashboard}</option>
+              <option value="timetable">{t.nav.timetable}</option>
+              <option value="assignments">{t.nav.assignments}</option>
+              <option value="workload">{t.nav.workload}</option>
+              <option value="attendance">{t.nav.attendance}</option>
+              <option value="suggestions">{t.nav.anonymousSuggestion}</option>
+              {role === "director" || role === "manager" ? (
+                <option value="suggestions-review">Anonim Takliflar (Ko'rib chiqish)</option>
+              ) : null}
+              {role === "manager" ? (
+                <option value="csv-import">CSV Import</option>
+              ) : null}
+              <option value="announcements">{t.nav.announcements}</option>
+              <option value="policies">{t.nav.knowledgeBase}</option>
+              <option value="events">{t.nav.events}</option>
+              <option value="projects">{t.nav.projects}</option>
+              <option value="facilities">{t.nav.facilities}</option>
+            </select>
+          </div>
+
+          {renderActiveModule()}
+        </main>
+      </div>
+    </div>
+  );
+}

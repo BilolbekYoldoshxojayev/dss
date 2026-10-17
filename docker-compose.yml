@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: namps_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-namps_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-namps_secure_password_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-namps_os}
+    ports:
+      - "5432:5432"
+    volumes:
+      - namps_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-namps_user} -d ${POSTGRES_DB:-namps_os}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - namps_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: namps_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-namps_user}:${POSTGRES_PASSWORD:-namps_secure_password_2026}@db:5432/${POSTGRES_DB:-namps_os}
+      JWT_SECRET: ${JWT_SECRET:-production-jwt-secret-min-32-chars-long}
+      ANONYMOUS_PEPPER: ${ANONYMOUS_PEPPER:-production-anonymous-pepper-salt}
+      NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-false}
+    ports:
+      - "3000:3000"
+    networks:
+      - namps_network
+
+volumes:
+  namps_pgdata:
+    driver: local
+
+networks:
+  namps_network:
+    driver: bridge
