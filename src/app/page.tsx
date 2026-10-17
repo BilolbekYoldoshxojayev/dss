@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n } from "@/i18n/context";
+import { LoginScreen } from "@/components/LoginScreen";
 
 // Modules
 import { StudentDashboardModule } from "@/components/modules/StudentDashboardModule";
@@ -24,22 +25,21 @@ import { ProjectsModule } from "@/components/modules/ProjectsModule";
 import { FacilitiesSupportModule } from "@/components/modules/FacilitiesSupportModule";
 
 export default function Home() {
-  const { role } = useAuth();
+  const { role, user, isLoading, hasTab } = useAuth();
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // Determine what to render based on activeTab and role
   const renderActiveModule = () => {
-    switch (activeTab) {
+    // A tab whose module is switched off (FEATURES) behaves like the dashboard.
+    const tab = hasTab(activeTab) ? activeTab : "dashboard";
+    switch (tab) {
       case "dashboard":
-        if (role === "director") {
+        if (role === "admin") {
           return <DirectorDashboardModule onNavigateToSuggestions={() => setActiveTab("suggestions-review")} />;
         }
-        if (role === "parent") {
+        if (role === "parent" && hasTab("guardian")) {
           return <GuardianPortalModule />;
-        }
-        if (role === "manager") {
-          return <CsvImportModule />;
         }
         if (role === "teacher") {
           return <AssignmentsModule />;
@@ -93,6 +93,9 @@ export default function Home() {
     }
   };
 
+  if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+  if (!user) return <LoginScreen />;
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950">
       <Navbar />
@@ -111,20 +114,20 @@ export default function Home() {
               <option value="dashboard">{t.nav.dashboard}</option>
               <option value="timetable">{t.nav.timetable}</option>
               <option value="assignments">{t.nav.assignments}</option>
-              <option value="workload">{t.nav.workload}</option>
+              {hasTab("workload") && <option value="workload">{t.nav.workload}</option>}
               <option value="attendance">{t.nav.attendance}</option>
-              <option value="suggestions">{t.nav.anonymousSuggestion}</option>
-              {role === "director" || role === "manager" ? (
+              {hasTab("suggestions") && <option value="suggestions">{t.nav.anonymousSuggestion}</option>}
+              {role === "admin" && hasTab("suggestions-review") ? (
                 <option value="suggestions-review">Anonim Takliflar (Ko'rib chiqish)</option>
               ) : null}
-              {role === "manager" ? (
+              {role === "admin" ? (
                 <option value="csv-import">CSV Import</option>
               ) : null}
               <option value="announcements">{t.nav.announcements}</option>
-              <option value="policies">{t.nav.knowledgeBase}</option>
-              <option value="events">{t.nav.events}</option>
-              <option value="projects">{t.nav.projects}</option>
-              <option value="facilities">{t.nav.facilities}</option>
+              {hasTab("policies") && <option value="policies">{t.nav.knowledgeBase}</option>}
+              {hasTab("events") && <option value="events">{t.nav.events}</option>}
+              {hasTab("projects") && <option value="projects">{t.nav.projects}</option>}
+              {hasTab("facilities") && <option value="facilities">{t.nav.facilities}</option>}
             </select>
           </div>
 

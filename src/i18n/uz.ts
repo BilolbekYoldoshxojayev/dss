@@ -38,6 +38,7 @@ export const uz = {
     theme: "Mavzu",
   },
   roles: {
+    admin: "Administrator",
     director: "Direktor",
     manager: "Menejer",
     teacher: "O'qituvchi",
@@ -45,6 +46,12 @@ export const uz = {
     parent: "Ota-ona",
     librarian: "Kutubxonachi",
     staff: "Xodim",
+  },
+  auth: {
+    username: "Foydalanuvchi nomi",
+    password: "Parol",
+    signIn: "Kirish",
+    signOut: "Chiqish",
   },
   nav: {
     dashboard: "Bosh sahifa",

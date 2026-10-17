@@ -38,6 +38,7 @@ export const en = {
     theme: "Theme",
   },
   roles: {
+    admin: "Administrator",
     director: "Director",
     manager: "Manager",
     teacher: "Teacher",
@@ -45,6 +46,12 @@ export const en = {
     parent: "Parent / Guardian",
     librarian: "Librarian",
     staff: "Staff",
+  },
+  auth: {
+    username: "Username",
+    password: "Password",
+    signIn: "Sign in",
+    signOut: "Sign out",
   },
   nav: {
     dashboard: "Dashboard",

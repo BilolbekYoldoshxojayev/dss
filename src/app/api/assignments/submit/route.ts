@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
+import { badRequest, forbidden, notFound, readJson, withAuth } from "@/lib/authz";
 import { db } from "@/db";
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { assignmentId, studentId, studentName, content } = body;
-
-    if (!assignmentId || !studentId || !content) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const submission = await db.submitAssignment(assignmentId, studentId, studentName || "Student", content);
+export const POST = withAuth(
+  async (req, user) => {
+    const body = await readJson(req);
+    const assignmentId = typeof body.assignmentId === "string" ? body.assignmentId : "";
+    const content = typeof body.content === "string" ? body.content.trim() : "";
+    if (!assignmentId || !content) throw badRequest("assignmentId and content are required");
+    const assignment = await db.getAssignmentById(assignmentId);
+    if (!assignment) throw notFound("Assignment not found");
+    if (assignment.classId !== user.classId) throw forbidden();
+    // The submitting student is always the logged-in student; a body studentId is ignored.
+    const submission = await db.submitAssignment(assignmentId, user.id, content);
     return NextResponse.json({ submission }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to submit assignment" }, { status: 500 });
-  }
-}
+  },
+  { roles: ["student"] }
+);
