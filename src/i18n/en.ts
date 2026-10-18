@@ -229,6 +229,7 @@ export const en = {
     a: "A",
     l: "L",
     e: "E",
+    parentsSoon: "Attendance for parents is coming in version 2.",
   },
   guardian: {
     title: "Guardian Portal",

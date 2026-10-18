@@ -229,6 +229,7 @@ export const uz = {
     a: "Y",
     l: "K",
     e: "S",
+    parentsSoon: "Ota-onalar uchun davomat 2-versiyada qo'shiladi.",
   },
   guardian: {
     title: "Ota-ona portali",
