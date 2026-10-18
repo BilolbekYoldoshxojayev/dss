@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSession, sessionCookie } from "@/lib/auth";
 import { errorResponse, readJson } from "@/lib/authz";
-import { isDemoMode } from "@/lib/env";
+import { isDemoMode, isFeatureEnabled } from "@/lib/env";
 import { db } from "@/db";
 
 // Role switcher backend: starts a real server session as the seeded demo user
@@ -13,6 +13,9 @@ export async function POST(req: Request) {
     const role = body.role;
     if (role !== "student" && role !== "teacher" && role !== "admin" && role !== "parent") {
       return NextResponse.json({ error: "Unknown role" }, { status: 400 });
+    }
+    if (role === "parent" && !isFeatureEnabled("guardian")) {
+      return NextResponse.json({ error: "Parent accounts are not enabled yet" }, { status: 403 });
     }
     const user = await db.getFirstUserByRole(role);
     if (!user) return NextResponse.json({ error: "No demo user for role" }, { status: 404 });

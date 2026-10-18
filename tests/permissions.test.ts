@@ -346,6 +346,10 @@ describe("Role gates, DEMO_MODE and FEATURES", () => {
     expect((await call(resetRoute.POST, "POST", "/api/demo/reset", { cookie: admin })).status).toBe(404);
     expect((await call(demoLogin.POST, "POST", "/api/auth/demo-login", { body: { role: "admin" } })).status).toBe(404);
     process.env.DEMO_MODE = "true";
+    // parent sessions need FEATURES to include "guardian", also through the demo login
+    process.env.FEATURES = "";
+    expect((await call(demoLogin.POST, "POST", "/api/auth/demo-login", { body: { role: "parent" } })).status).toBe(403);
+    process.env.FEATURES = "all";
     const student = await loginAs("azamat.toirov");
     expect((await call(resetRoute.POST, "POST", "/api/demo/reset", { cookie: student })).status).toBe(403);
     const demo = await call(demoLogin.POST, "POST", "/api/auth/demo-login", { body: { role: "teacher" } });

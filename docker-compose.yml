@@ -37,6 +37,7 @@ services:
       # No defaults for secrets: compose refuses to start without them (fail closed).
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET (>= 32 random chars)}
       ANONYMOUS_PEPPER: ${ANONYMOUS_PEPPER:?set ANONYMOUS_PEPPER (>= 16 random chars)}
+      MIGRATE_ON_START: "true"
       DEMO_MODE: ${DEMO_MODE:-false}
       FEATURES: ${FEATURES:-}
     ports:
