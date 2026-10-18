@@ -28,7 +28,19 @@ export function getDb(): Db {
   let db: Db;
   let kind: "pglite" | "pg";
   if (/^postgres(ql)?:\/\//.test(url)) {
-    db = drizzlePg(new Pool({ connectionString: url }), { schema }) as unknown as Db;
+    const isSsl =
+      url.includes("sslmode=require") ||
+      url.includes("supabase.co") ||
+      url.includes("supabase.com") ||
+      url.includes("neon.tech");
+    const pool = new Pool({
+      connectionString: url,
+      ssl: isSsl ? { rejectUnauthorized: false } : undefined,
+      max: process.env.VERCEL ? 1 : 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
+    db = drizzlePg(pool, { schema }) as unknown as Db;
     kind = "pg";
   } else if (url === "memory://") {
     db = drizzlePglite(new PGlite(), { schema });

@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --import tsx src/db/migrate.ts",
     "db:seed": "node --import tsx src/db/seed/index.ts",
-    "admin:bootstrap": "node --import tsx src/db/bootstrap-cli.ts"
+    "admin:bootstrap": "node --import tsx src/db/bootstrap-cli.ts",
+    "vercel-build": "node --import tsx src/db/migrate.ts && next build"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.10",

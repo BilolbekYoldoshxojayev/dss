@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // PGlite ships WASM + data files that must not be bundled (local dev / demo database).
   serverExternalPackages: ["@electric-sql/pglite", "pdfkit"],
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./assets/**/*"],
+  },
 };
 
 export default nextConfig;

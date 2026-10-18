@@ -5,6 +5,10 @@ import { runMigrations } from "./client";
 async function main() {
   dotenv.config({ path: ".env.local" });
   dotenv.config();
+  if (process.env.SKIP_MIGRATE === "true") {
+    console.log("SKIP_MIGRATE is true; skipping migrations.");
+    process.exit(0);
+  }
   await runMigrations();
   console.log("Migrations applied.");
   process.exit(0);

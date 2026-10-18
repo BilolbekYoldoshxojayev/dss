@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import os from "os";
 import crypto from "crypto";
 import { HttpError } from "@/lib/authz";
 
@@ -18,8 +19,23 @@ const TYPES: Record<string, string> = {
 };
 export const ALLOWED_EXTENSIONS = Object.keys(TYPES);
 
+function supabaseStorageConfig() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  if (url && key) {
+    return {
+      url: url.replace(/\/$/, ""),
+      key,
+      bucket: process.env.SUPABASE_STORAGE_BUCKET || "homework-attachments",
+    };
+  }
+  return null;
+}
+
 export function uploadDir(): string {
-  return path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), ".data", "uploads"));
+  if (process.env.UPLOAD_DIR) return path.resolve(process.env.UPLOAD_DIR);
+  if (process.env.VERCEL) return path.join(os.tmpdir(), "namps-uploads");
+  return path.resolve(path.join(process.cwd(), ".data", "uploads"));
 }
 
 function extensionOf(name: string): string {
@@ -54,9 +70,51 @@ export async function saveUpload(file: File): Promise<{ stored: string; displayN
   if (bytes.length === 0 || bytes.length > MAX_UPLOAD_BYTES || !matchesMagic(ext, bytes)) {
     throw new HttpError(400, "File content does not match its type");
   }
-  await fs.mkdir(uploadDir(), { recursive: true });
+
   const stored = `${crypto.randomUUID()}.${ext}`;
-  await fs.writeFile(path.join(uploadDir(), stored), bytes, { flag: "wx" });
+  const cfg = supabaseStorageConfig();
+
+  if (cfg) {
+    const uploadUrl = `${cfg.url}/storage/v1/object/${cfg.bucket}/${stored}`;
+    let res = await fetch(uploadUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cfg.key}`,
+        "Content-Type": TYPES[ext] || "application/octet-stream",
+        "x-upsert": "true",
+      },
+      body: bytes,
+    });
+
+    // If bucket doesn't exist, auto-create private bucket and retry once
+    if (res.status === 404 || res.status === 400) {
+      await fetch(`${cfg.url}/storage/v1/bucket`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfg.key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: cfg.bucket, name: cfg.bucket, public: false }),
+      });
+      res = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${cfg.key}`,
+          "Content-Type": TYPES[ext] || "application/octet-stream",
+          "x-upsert": "true",
+        },
+        body: bytes,
+      });
+    }
+
+    if (!res.ok) {
+      throw new HttpError(500, `Failed to upload to Supabase Storage: ${res.statusText}`);
+    }
+  } else {
+    await fs.mkdir(uploadDir(), { recursive: true });
+    await fs.writeFile(path.join(uploadDir(), stored), bytes, { flag: "wx" });
+  }
+
   return { stored, displayName: safeDisplayName(file.name) };
 }
 
@@ -67,6 +125,21 @@ function resolveStored(stored: string): string {
 }
 
 export async function readUpload(stored: string): Promise<{ bytes: Buffer; contentType: string }> {
+  const cfg = supabaseStorageConfig();
+  if (cfg) {
+    try {
+      const res = await fetch(`${cfg.url}/storage/v1/object/authenticated/${cfg.bucket}/${stored}`, {
+        headers: { Authorization: `Bearer ${cfg.key}` },
+      });
+      if (!res.ok) throw new HttpError(404, "File not found");
+      const bytes = Buffer.from(await res.arrayBuffer());
+      return { bytes, contentType: TYPES[extensionOf(stored)] ?? "application/octet-stream" };
+    } catch (e) {
+      if (e instanceof HttpError) throw e;
+      throw new HttpError(404, "File not found");
+    }
+  }
+
   try {
     return { bytes: await fs.readFile(resolveStored(stored)), contentType: TYPES[extensionOf(stored)] ?? "application/octet-stream" };
   } catch (e) {
@@ -77,5 +150,18 @@ export async function readUpload(stored: string): Promise<{ bytes: Buffer; conte
 
 export async function deleteUpload(stored: string | null | undefined): Promise<void> {
   if (!stored) return;
+  const cfg = supabaseStorageConfig();
+  if (cfg) {
+    await fetch(`${cfg.url}/storage/v1/object/${cfg.bucket}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${cfg.key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prefixes: [stored] }),
+    });
+    return;
+  }
   await fs.rm(resolveStored(stored), { force: true });
 }
+
