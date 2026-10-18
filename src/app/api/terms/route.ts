@@ -3,7 +3,11 @@ import { readJson, withAuth } from "@/lib/authz";
 import { createTerm } from "@/db/admin";
 import { db } from "@/db";
 
-export const GET = withAuth(async () => NextResponse.json({ terms: await db.getTerms() }));
+// ?courseId=... limits the list to the academic year of that course's class (used by the marks screen).
+export const GET = withAuth(async (req) => {
+  const courseId = new URL(req.url).searchParams.get("courseId");
+  return NextResponse.json({ terms: courseId ? await db.getTermsForCourse(courseId) : await db.getTerms() });
+});
 
 export const POST = withAuth(
   async (req, user) => {
