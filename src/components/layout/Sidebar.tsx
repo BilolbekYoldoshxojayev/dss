@@ -43,6 +43,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
           { id: "timetable", label: t.nav.timetable, icon: CalendarDays },
           { id: "assignments", label: t.nav.assignments, icon: CheckSquare },
+          { id: "homework", label: t.homework.title, icon: BookOpen },
           { id: "marks", label: t.marks.title, icon: Award },
           { id: "workload", label: t.nav.workload, icon: Clock },
           { id: "attendance", label: t.nav.attendance, icon: ClipboardList },
@@ -59,6 +60,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           { id: "dashboard", label: t.nav.dashboard, icon: LayoutDashboard },
           { id: "timetable", label: "O'qitish jadvali", icon: CalendarDays },
           { id: "assignments", label: "Vazifalar va baholash", icon: CheckSquare },
+          { id: "homework", label: t.homework.title, icon: BookOpen },
           { id: "marks", label: t.marks.title, icon: Award },
           { id: "attendance", label: "Davomat daftari", icon: ClipboardList },
           { id: "workload", label: t.nav.workload, icon: Clock },
@@ -70,6 +72,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         return [
           { id: "dashboard", label: "Administrator paneli", icon: LayoutDashboard },
           { id: "suggestions-review", label: "Anonim takliflar (Ko'rib chiqish)", icon: MessageSquareLock },
+          { id: "homework", label: t.homework.title, icon: BookOpen },
           { id: "marks", label: t.marks.title, icon: Award },
           { id: "users", label: t.nav.userManagement, icon: UserCog },
           { id: "analytics", label: t.nav.analytics, icon: BarChart3 },
