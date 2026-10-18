@@ -261,6 +261,17 @@ class DataRepository {
     return getDb().select().from(t.terms).orderBy(t.terms.startDate);
   }
 
+  /** Terms of the academic year a course (class + subject) belongs to. */
+  public async getTermsForCourse(courseId: string) {
+    return getDb()
+      .select({ id: t.terms.id, yearId: t.terms.yearId, name: t.terms.name, startDate: t.terms.startDate, endDate: t.terms.endDate, closed: t.terms.closed })
+      .from(t.terms)
+      .innerJoin(t.classes, eq(t.classes.yearId, t.terms.yearId))
+      .innerJoin(t.teacherAssignments, eq(t.teacherAssignments.classId, t.classes.id))
+      .where(eq(t.teacherAssignments.id, courseId))
+      .orderBy(t.terms.startDate);
+  }
+
   public async getTermById(id: string) {
     const [r] = await getDb().select().from(t.terms).where(eq(t.terms.id, id));
     return r ?? null;

@@ -27,6 +27,8 @@ export const POST = withAuth(
     await assertTeachesAssignment(user, courseId);
     const term = await db.getTermById(termId);
     if (!term) throw notFound("Term not found");
+    // The term must belong to the same academic year as the course's class.
+    if (!(await db.getTermsForCourse(courseId)).some((t) => t.id === termId)) throw badRequest("This term belongs to a different academic year than the class");
     if (term.closed && user.role !== "admin") throw forbidden("This term is closed");
     if (!title || !TYPES.includes(type) || !DATE_RE.test(date) || !Number.isInteger(maxScore) || maxScore < 1 || maxScore > 1000) {
       throw badRequest("title, type, date (YYYY-MM-DD) and an integer maxScore (1-1000) are required");

@@ -85,20 +85,20 @@ function TeacherMarks() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [form, setForm] = useState({ title: "", type: "quiz", date: new Date().toISOString().slice(0, 10), maxScore: "20", termId: "" });
 
-  const loadTerms = useCallback(() => {
-    fetch("/api/terms").then((r) => r.json()).then((d) => {
+  // Only the terms of the selected class's academic year can be chosen.
+  const loadTerms = useCallback((cid: string) => {
+    fetch(cid ? `/api/terms?courseId=${cid}` : "/api/terms").then((r) => r.json()).then((d) => {
       setTerms(d.terms);
-      setForm((f) => ({ ...f, termId: f.termId || d.terms[0]?.id || "" }));
+      setForm((f) => ({ ...f, termId: d.terms.some((x: Term) => x.id === f.termId) ? f.termId : d.terms[0]?.id || "" }));
     });
   }, []);
 
   useEffect(() => {
-    loadTerms();
     fetch("/api/courses").then((r) => (r.ok ? r.json() : { courses: [] })).then((d) => {
       setCourses(d.courses);
       if (d.courses[0]) setCourseId(d.courses[0].id);
     });
-  }, [loadTerms]);
+  }, []);
 
   const loadAssessments = useCallback(async (cid: string) => {
     if (!cid) return;
@@ -110,7 +110,8 @@ function TeacherMarks() {
     setSelected(null);
     setGrid([]);
     loadAssessments(courseId);
-  }, [courseId, loadAssessments]);
+    loadTerms(courseId);
+  }, [courseId, loadAssessments, loadTerms]);
 
   const openAssessment = async (a: Assessment) => {
     setSelected(a);
@@ -167,7 +168,7 @@ function TeacherMarks() {
     await fetch(`/api/terms/${term.id}`, {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ closed: !term.closed }),
     });
-    loadTerms();
+    loadTerms(courseId);
     loadAssessments(courseId);
     setSelected(null);
   };
