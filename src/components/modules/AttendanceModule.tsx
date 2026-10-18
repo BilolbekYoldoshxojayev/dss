@@ -25,7 +25,11 @@ const todayStr = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tashke
 
 export function AttendanceModule() {
   const { role } = useAuth();
-  return role === "student" ? <StudentHistory /> : <StaffAttendance />;
+  const { t } = useI18n();
+  if (role === "student") return <StudentHistory />;
+  if (role === "teacher" || role === "admin") return <StaffAttendance />;
+  // Parents are a v2 feature: they have no register, summary or child picker yet.
+  return <p className="text-sm text-slate-500">{t.attendance.parentsSoon}</p>;
 }
 
 // ---------------------------------------------------------------- student

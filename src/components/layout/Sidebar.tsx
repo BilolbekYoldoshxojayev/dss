@@ -84,6 +84,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           { id: "analytics", label: t.nav.analytics, icon: BarChart3 },
           { id: "csv-import", label: t.common.importCsv + " (Maktab ko'chirish)", icon: UploadCloud },
           { id: "timetable", label: "Dars jadvallarini boshqarish", icon: CalendarDays },
+          { id: "attendance", label: t.nav.attendance, icon: ClipboardList },
           { id: "announcements", label: t.nav.announcements, icon: Bell },
           { id: "policies", label: t.nav.knowledgeBase, icon: FileText },
           { id: "facilities", label: t.nav.facilities, icon: Wrench },

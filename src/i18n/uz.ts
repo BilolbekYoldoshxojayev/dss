@@ -177,6 +177,7 @@ export const uz = {
     download: "Yuklab olish",
     reportsHint: "Excelda ochiladi. Administrator va sinf rahbari sinfning hammasini, fan o'qituvchisi faqat o'z fanlarini oladi.",
     mustChangeBanner: "Davom etishdan oldin o'z parolingizni tanlang.",
+    attendanceHomeroomOnly: "Davomatni faqat sinf rahbari yuklab olishi mumkin.",
   },
   transcript: {
     title: "Ma'lumotnoma",
@@ -318,6 +319,7 @@ export const uz = {
     a: "Y",
     l: "K",
     e: "S",
+    parentsSoon: "Ota-onalar uchun davomat 2-versiyada qo'shiladi.",
   },
   guardian: {
     title: "Ota-ona portali",

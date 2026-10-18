@@ -161,6 +161,12 @@ export async function updateUser(
     } else if (oldStudent) {
       await tx.delete(t.students).where(eq(t.students.userId, id));
     }
+    // A teacher who still teaches courses can't stop being a teacher: those courses (marks, attendance,
+    // timetable) would be left with someone who is no longer allowed to enter data.
+    if (old.role === "teacher" && newRole !== "teacher") {
+      const [{ n }] = await tx.select({ n: sql<number>`count(*)::int` }).from(t.teacherAssignments).where(eq(t.teacherAssignments.teacherId, id));
+      if (n > 0) throw conflict(`This teacher still teaches ${n} course(s). Reassign them (School setup → Who teaches what) before changing the role`);
+    }
     // A teacher who stops being a teacher can't stay class teacher of anything.
     if (old.role === "teacher" && newRole !== "teacher") {
       await tx.update(t.classes).set({ classTeacherId: null }).where(eq(t.classes.classTeacherId, id));
