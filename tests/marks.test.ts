@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
 import { getDb } from "@/db/client";
-import { auditLog, marks } from "@/db/schema";
+import { academicYears, auditLog, marks, terms } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { summarizeMarks } from "@/lib/marks";
 import { setupDb, resetDb } from "./helpers";
@@ -9,6 +9,7 @@ import * as assessments from "@/app/api/assessments/route";
 import * as gridRoute from "@/app/api/assessments/[id]/marks/route";
 import * as marksRoute from "@/app/api/marks/route";
 import * as termRoute from "@/app/api/terms/[id]/route";
+import * as termsRoute from "@/app/api/terms/route";
 import * as coursesRoute from "@/app/api/courses/route";
 
 type Handler = (req: Request, ctx: never) => Promise<Response>;
@@ -118,6 +119,26 @@ describe("M2: assessments and the class grid", () => {
     expect((await call(gridRoute.GET, "GET", "/api/assessments/asm-math-q1/marks", student, undefined, "asm-math-q1")).status).toBe(403);
     expect((await put(student, "asm-math-q1", [{ studentId: "usr-stu-01", score: 20 }])).status).toBe(403);
     expect((await call(assessments.POST, "POST", "/api/assessments", student, {})).status).toBe(403);
+  });
+});
+
+describe("M2: terms belong to the class's academic year", () => {
+  beforeAll(setupDb);
+  beforeEach(resetDb);
+
+  it("rejects a term from another academic year and filters the term list by course", async () => {
+    const db = getDb();
+    await db.insert(academicYears).values({ id: "ay-2025", name: "2025-2026", startDate: "2025-09-01", endDate: "2026-06-30" });
+    await db.insert(terms).values({ id: "term-2025-1", yearId: "ay-2025", name: "Old Term 1", startDate: "2025-09-01", endDate: "2025-12-27" });
+    const teacher = await loginAs("jasur.rahimov");
+    const res = await call(assessments.POST, "POST", "/api/assessments", teacher, {
+      courseId: "crs-10a-math", termId: "term-2025-1", type: "quiz", title: "wrong year", date: "2026-10-20", maxScore: 10,
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toMatch(/academic year/);
+    const list = await (await call(termsRoute.GET, "GET", "/api/terms?courseId=crs-10a-math", teacher)).json();
+    expect(list.terms.map((x: { id: string }) => x.id)).toEqual(["term-2026-1", "term-2026-2"]);
+    expect((await (await call(termsRoute.GET, "GET", "/api/terms", teacher)).json()).terms).toHaveLength(3);
   });
 });
 
