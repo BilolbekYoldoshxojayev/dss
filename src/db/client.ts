@@ -29,12 +29,14 @@ export function getDb(): Db {
   let kind: "pglite" | "pg";
   if (/^postgres(ql)?:\/\//.test(url)) {
     const isSsl =
-      url.includes("sslmode=require") ||
+      url.includes("sslmode=") ||
       url.includes("supabase.co") ||
       url.includes("supabase.com") ||
       url.includes("neon.tech");
+    // Strip sslmode query param so pg doesn't force rejectUnauthorized: true
+    const cleanUrl = url.replace(/([?&])sslmode=[^&]+(&|$)/, (_, p1, p2) => (p2 ? p1 : "")).replace(/\?$/, "");
     const pool = new Pool({
-      connectionString: url,
+      connectionString: cleanUrl,
       ssl: isSsl ? { rejectUnauthorized: false } : undefined,
       max: process.env.VERCEL ? 1 : 10,
       idleTimeoutMillis: 30000,
