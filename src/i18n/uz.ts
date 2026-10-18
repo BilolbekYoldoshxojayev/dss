@@ -177,6 +177,7 @@ export const uz = {
     download: "Yuklab olish",
     reportsHint: "Excelda ochiladi. Administrator va sinf rahbari sinfning hammasini, fan o'qituvchisi faqat o'z fanlarini oladi.",
     mustChangeBanner: "Davom etishdan oldin o'z parolingizni tanlang.",
+    attendanceHomeroomOnly: "Davomatni faqat sinf rahbari yuklab olishi mumkin.",
   },
   nav: {
     dashboard: "Bosh sahifa",

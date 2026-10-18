@@ -151,6 +151,13 @@ describe("M5: users", () => {
     expect((await patch("usr-stu-02", { role: "teacher" })).status).toBe(200);
     expect(await getDb().select().from(students).where(eq(students.userId, "usr-stu-02"))).toHaveLength(0);
     expect((await patch("usr-tch-03", { role: "student" })).status).toBe(400); // student needs a class
+    // a teacher who still teaches courses cannot change role until those are reassigned
+    const blocked = await patch("usr-tch-01", { role: "parent" });
+    expect(blocked.status).toBe(409);
+    expect((await blocked.json()).error).toMatch(/still teaches 2 course/);
+    for (const c of ["crs-10a-math", "crs-10a-cs"]) {
+      expect((await call(courseRoute.PATCH, "PATCH", `/api/admin/courses/${c}`, admin, { teacherId: "usr-tch-03" }, c)).status).toBe(200);
+    }
     // Jasur is class teacher of 10-A; demoting him must clear that link
     expect((await patch("usr-tch-01", { role: "parent" })).status).toBe(200);
     expect((await getDb().select().from(classes).where(eq(classes.id, "cls-10a")))[0].classTeacherId).toBeNull();

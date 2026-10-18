@@ -177,6 +177,7 @@ export const en = {
     download: "Download",
     reportsHint: "Opens in Excel. Admins and class teachers get everything for the class; subject teachers get their own subjects.",
     mustChangeBanner: "Please choose your own password before continuing.",
+    attendanceHomeroomOnly: "Attendance can be exported only by the class teacher of the class.",
   },
   nav: {
     dashboard: "Dashboard",

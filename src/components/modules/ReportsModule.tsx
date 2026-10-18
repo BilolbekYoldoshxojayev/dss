@@ -12,6 +12,8 @@ export function ReportsModule() {
   const { t } = useI18n();
   const { role } = useAuth();
   const [classes, setClasses] = useState<Cls[]>([]);
+  // Attendance export is only for the class teacher of a class (or an admin); grades also for subject teachers.
+  const [homeroomIds, setHomeroomIds] = useState<Set<string>>(new Set());
   const [classId, setClassId] = useState("");
   const [terms, setTerms] = useState<{ id: string; name: string }[]>([]);
   const [termId, setTermId] = useState("");
@@ -30,6 +32,7 @@ export function ReportsModule() {
         (c.data.courses ?? []).forEach((x) => map.set(x.classId, x.className));
         (own.data.classes ?? []).forEach((x) => map.set(x.id, x.name));
         setClasses([...map].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name)));
+        setHomeroomIds(new Set((own.data.classes ?? []).map((x) => x.id)));
       }
       const tr = await api<{ terms: { id: string; name: string }[] }>("/api/terms");
       setTerms(tr.data.terms ?? []);
@@ -59,7 +62,9 @@ export function ReportsModule() {
           <label className="text-xs font-semibold">{t.admin.from}<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className={`${inputCls} block mt-1`} /></label>
           <label className="text-xs font-semibold">{t.admin.to}<input type="date" value={to} onChange={(e) => setTo(e.target.value)} className={`${inputCls} block mt-1`} /></label>
         </div>
-        <div><a href={attUrl} className={linkCls}>{t.admin.download}</a></div>
+        {role === "admin" || homeroomIds.has(classId)
+          ? <div><a href={attUrl} className={linkCls}>{t.admin.download}</a></div>
+          : <p className="text-xs text-slate-500">{t.admin.attendanceHomeroomOnly}</p>}
       </div>
     </div>
   );
