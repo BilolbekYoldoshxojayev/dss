@@ -1,0 +1,69 @@
+# Progress
+
+Scope source of truth: `docs/V1_PLAN.md` (`.ai/TASKS.md` and `.ai/STATE.md` are stale).
+
+## M1 — Foundation and permissions: done, on the fork `shack-dev-j/dss` (2026-10-18)
+- **Done:** Drizzle schema + migration on PGlite (dev/tests) / `pg` (production); username login, `sessions` table (HMAC of an opaque
+  token), httpOnly cookie, real logout, password change + admin reset; JWT removed; `withAuth()` (401 → 404 → 403) and ownership
+  helpers on every route; `DEMO_MODE` and `FEATURES` gates; config fails closed; db scripts fixed; eslint + CI workflow.
+  Also a read-only `GET /api/marks`, and `audit_log` rows for grading and attendance edits.
+- **Tests:** 42 (30 new permission tests; 12 of the original 13 ported to PGlite, the repo-level "unauthorized role" test became route-level tests).
+- **Verified:** clean clone of `feat/m1-foundation` with `pnpm install --frozen-lockfile` + typecheck, lint, test, build, all exit 0;
+  manual `next start` against a seeded DB (login → marks → logout → 401; demo reset 404 off; no start without `SESSION_SECRET`).
+- **Not verified:** Docker/Postgres, a real GitHub Actions run, the UI in a browser.
+- **Leftovers:** `shack-dev-j` has READ only on upstream `BilolbekYoldoshxojayev/dss`; both branches are pushed to the fork `shack-dev-j/dss` instead. Upstream PRs (plan → `main`, then M1) wait for write access or a PR from the fork. Cookie is `Secure` in
+  production, so a pilot needs HTTPS. Login throttle is per username, so anyone can lock a user out for 15 min. Attendance stays
+  per timetable slot (plan §3 differs); `homework`, backdate approvals, grading scale are M2/M3. `director`+`manager` → `admin`;
+  parents can't log in unless `FEATURES` has `guardian`. `docker-compose` now requires `SESSION_SECRET`/`ANONYMOUS_PEPPER`, migrations run on container start (`MIGRATE_ON_START=true`, untested without Docker); a fresh production DB has no users, so an admin bootstrap is still needed (M5).
+- **Also done after review:** account page (password change), admin user list + password reset, and real submissions in `AssignmentsModule` (`GET /api/assignments/submit`).
+- **Next:** M3 (attendance grid, 7-day backdate rule + admin approval, homework).
+
+## M2 — Marks and grades: done on `feat/m2-marks`, PR into `feat/m1-foundation` (2026-10-18)
+- **Done:** teachers create assessments per (class, subject, term) and fill a class grid (Enter jumps to the next student, one Save);
+  students see marks by term and subject with averages (subject = points earned / points possible; overall = mean of subjects);
+  every mark create/update/delete writes `audit_log` (old → new, who) in the same transaction; admins can close/reopen a term and
+  only admins can change marks or add assessments in a closed term. New routes: `/api/courses`, `/api/terms`, `/api/terms/[id]`,
+  `/api/assessments`, `/api/assessments/[id]/marks`; `/api/marks` now returns `summary`.
+- **Tests:** 52 total (10 new in `tests/marks.test.ts`: averages, audit trail, range checks, cross-teacher 403, closed terms).
+- **Not verified:** the new screens in a real browser (the browser pane could not open the local server); Docker/Postgres.
+- **Leftovers:** grading scale (5-point vs 100-point) is not configurable yet, scores are plain points; no per-subject final grade
+  or year transcript (M4); comments are plain text, one per mark.
+
+## M3 — Attendance and homework: done on `feat/m3-attendance-homework` (2026-10-18)
+- **Done:** attendance register per lesson (everyone present by default, tap to change, one Save); edits older than 7 days
+  (Asia/Tashkent) need an admin approval for that exact lesson, the future is rejected, admins are never blocked; whole-class
+  summary for the class teacher/admin; students see their own history and rate. Homework per class+subject with optional
+  attachment (local disk volume `UPLOAD_DIR`, 5 MB, pdf/png/jpg/txt/docx/xlsx/pptx, extension + magic-byte check, generated
+  file names, access-checked download), today's homework first then upcoming, "mark as done". Migration `0001`.
+- **Tests:** 70 total (18 new in `tests/attendance-homework.test.ts`; the test clock is fixed in `tests/setup.ts`).
+- **Verified:** typecheck, lint, build, and a real `next start` run (multipart upload, student download byte-identical, 401 without cookie).
+  **Not verified:** the new screens in a browser; Docker (uploads volume added to compose, untested).
+- **Leftovers:** `scripts/backup.sh` does not yet include the uploads folder (M5); attendance dates are not checked against the
+  slot's weekday; no virus scan on uploads; teachers can't request a backdate approval in-app (the admin approves on request).
+
+## M5 — Admin, export, backups, deployment: done on `feat/m5-admin` (2026-10-18)
+- **Done:** admin screens (users: create/deactivate/role/class/reset; school setup: classes, class teachers, subjects, who teaches
+  what, timetable with no double-booking, terms, grading scale; class-list CSV import with dry run and one-time passwords;
+  reports: grades + attendance CSV, role-scoped). Generated/reset passwords force a change at first login. Courses/slots that
+  hold marks or attendance cannot be deleted. First admin from `BOOTSTRAP_ADMIN_*` on an empty DB. Production compose: Caddy
+  HTTPS, internal-only app/db, healthchecks, daily backup job, `restore.sh`, `verify-restore.sh`. `docs/DEPLOYMENT.md`, `docs/PILOT_GUIDE.md`.
+- **Tests:** 94, and the whole suite passes on **real PostgreSQL 18** (`TEST_DATABASE_URL=... vitest --no-file-parallelism`);
+  CI now has a Postgres job too. A real `next start` on Postgres: migrate-on-start → bootstrap admin → forced password change → admin API.
+- **Not verified:** `pg_dump`/restore scripts and the backup container (no `pg_dump` and no Docker daemon here; only `sh -n` and
+  `docker compose config` ran) — **run `./scripts/verify-restore.sh` on the server before the pilot**, as the plan's definition of
+  done requires. Caddy/Let's Encrypt, the screens in a browser, a real GitHub Actions run of the new Postgres job.
+- **Leftovers:** CSV export only (no .xlsx; Excel opens the UTF-8 CSV); teacher import not supported (users are added in the UI);
+  no UI to change a username; parent accounts/guardian links are still v2; login throttle is per process.
+
+## M4 — Transcripts and PDF: done on `feat/m4-transcripts` (2026-10-18)
+- **Done:** term and full-year transcript per student (subject, teacher, term averages, year average, final grade by the school's grading
+  scale; overall row), as a screen and as a server-generated A4 PDF (Uzbek or English labels, Noto Sans bundled so Uzbek letters
+  and Cyrillic render). Access: the student, their **class teacher**, admins, linked parents (guardian feature) — subject teachers
+  do not get transcripts. Class teachers/admins pick class → student on the Transcript screen.
+- **Tests:** 103 total (12 new). PDF text is verified with `pdftotext` (names with o'/g' modifier letters, teachers, averages, grades);
+  CI installs poppler so those tests run there too. Real `next start` served the PDF; I looked at the rendered page.
+- **Decision to review:** the plan wanted a headless-browser (Chromium) render matched to the school's paper layout. Without the
+  paper sample I used **pdfkit** (pure JS, no Chromium in the Docker image). The layout is generic; when the sample arrives only
+  `src/lib/transcript-pdf.ts` changes (header, columns, signature block).
+- **Leftovers:** no school logo/stamp image; the full-year grade is the mean of term averages (confirm with the school how the
+  year grade is really computed); Docker image copies `assets/` for the fonts (untested without Docker).
